@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@v0.19.0
+        with:
+          # Cache bazelisk downloads
+          bazelisk-cache: true
+          # Store build cache per workflow/OS
+          disk-cache: ${{ github.workflow }}-${{ matrix.os }}
+          # Share repository cache between workflows
+          repository-cache: true
+
+      - name: Run Tests
+        shell: bash
+        run: |
+          bazel test //...
