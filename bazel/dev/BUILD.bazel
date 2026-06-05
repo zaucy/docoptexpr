@@ -2,6 +2,7 @@ load("@hedron_compile_commands//:refresh_compile_commands.bzl", "refresh_compile
 
 refresh_compile_commands(
     name = "refresh_compile_commands",
+    tags = ["manual"],
     targets = {
         # https://github.com/clangd/clangd/issues/1850#issuecomment-1841985906
         "//...": "--copt=-Xclang --copt=-std=c++23",
