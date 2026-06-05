@@ -1,0 +1,5 @@
+alias(
+    name = "docoptexpr",
+    actual = "//docoptexpr",
+    visibility = ["//visibility:public"],
+)

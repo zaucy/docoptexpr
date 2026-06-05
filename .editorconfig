@@ -1,0 +1,18 @@
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+
+[*.json]
+indent_size = 4
+indent_style = tab
+
+[*.{c,h,cc,hh,cpp,hpp,sc,sch,sh}]
+indent_size = 2
+indent_style = tab
+
+[*.{bzl,bazel}]
+# matches output of buildifier
+indent_size = 4
+indent_style = space

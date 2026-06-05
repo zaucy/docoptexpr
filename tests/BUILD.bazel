@@ -1,0 +1,14 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+
+cc_test(
+    name = "docoptexpr_test",
+    srcs = ["docoptexpr_test.cc"],
+    copts = select({
+        "@platforms//os:windows": [
+            "/std:c++latest",
+            "/Zc:__cplusplus",
+        ],
+        "//conditions:default": ["-std=c++23"],
+    }),
+    deps = ["//docoptexpr"],
+)

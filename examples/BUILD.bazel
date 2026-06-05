@@ -1,0 +1,14 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+
+cc_binary(
+    name = "naval_fate",
+    srcs = ["naval_fate.cc"],
+    copts = select({
+        "@platforms//os:windows": [
+            "/std:c++latest",
+            "/Zc:__cplusplus",
+        ],
+        "//conditions:default": ["-std=c++23"],
+    }),
+    deps = ["//docoptexpr"],
+)

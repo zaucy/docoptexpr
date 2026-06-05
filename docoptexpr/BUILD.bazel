@@ -1,0 +1,14 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+cc_library(
+    name = "docoptexpr",
+    hdrs = ["docoptexpr.hh"],
+    copts = select({
+        "@platforms//os:windows": [
+            "/std:c++latest",
+            "/Zc:__cplusplus",
+        ],
+        "//conditions:default": ["-std=c++23"],
+    }),
+    visibility = ["//visibility:public"],
+)
