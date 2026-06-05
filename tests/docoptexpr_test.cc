@@ -141,6 +141,38 @@ Options:
 	}
 }
 
+auto test_long_arguments() -> void {
+	constexpr auto parser = docoptexpr::parse<
+	  R"(Usage:
+  my_program --long-option=<value> <long-positional>
+
+Options:
+  --long-option=<value>  A very long option value.
+)">();
+
+	// Construct some really long strings (e.g. 500 characters)
+	auto long_value      = std::string(500, 'a');
+	auto long_positional = std::string(500, 'b');
+
+	auto argv = std::array<std::string, 3>{
+	  "my_program",
+	  "--long-option=" + long_value,
+	  long_positional
+	};
+
+	auto args = std::array<std::string_view, 2>{
+	  argv[1],
+	  argv[2]
+	};
+
+	auto res = parser.parse(args);
+	assert(res.has_value());
+
+	auto val = *res;
+	assert(val.get<"--long-option">() == long_value);
+	assert(val.get<"<long-positional>">() == long_positional);
+}
+
 // Confirm that help, description, options, and usage sections are correctly extracted at compile-time
 constexpr auto test_help_methods_compile_time() -> bool {
 	constexpr auto parser =
@@ -169,6 +201,7 @@ auto test_help_methods_runtime() -> void {
 auto main() -> int {
 	test_tcp_command();
 	test_options_and_failures();
+	test_long_arguments();
 	test_help_methods_runtime();
 	std::println("All docoptexpr tests (compile-time & runtime) passed successfully!");
 	return 0;
