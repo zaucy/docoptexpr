@@ -1,0 +1,58 @@
+name: ci
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          # TODO: https://github.com/zaucy/docoptexpr/issues/2
+          # - macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup LLVM
+        if: matrix.os != 'windows-latest'
+        uses: ZhongRuoyu/setup-llvm@v0
+        with:
+          llvm-version: 22
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          # Cache bazelisk downloads
+          bazelisk-cache: true
+          # Store build cache per workflow/OS
+          disk-cache: ${{ github.workflow }}-${{ matrix.os }}
+          # Share repository cache between workflows
+          repository-cache: true
+
+      - name: Run Tests
+        shell: bash
+        run: |
+          BAZEL_FLAGS=""
+          if [[ "${{ matrix.os }}" != "windows-latest" ]]; then
+            export CC=clang
+            export CXX=clang++
+            if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+              export BAZEL_USE_CPP_ONLY_TOOLCHAIN=1
+              SDK_PATH=$(xcrun --show-sdk-path)
+              BAZEL_FLAGS="--cxxopt=-isysroot --cxxopt=$SDK_PATH --linkopt=-isysroot --linkopt=$SDK_PATH"
+            fi
+          fi
+          bazel test $BAZEL_FLAGS //...
