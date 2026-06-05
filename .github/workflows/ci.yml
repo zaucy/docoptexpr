@@ -16,7 +16,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os:
+          - ubuntu-latest
+          - windows-latest
+          # TODO: https://github.com/zaucy/docoptexpr/issues/2
+          # - macos-latest
 
     steps:
       - name: Checkout repository
