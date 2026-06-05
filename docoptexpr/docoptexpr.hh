@@ -10,10 +10,9 @@
 namespace docoptexpr {
 
 namespace limits {
-constexpr auto max_key_length                  = size_t{64};
-constexpr auto max_pattern_elements            = size_t{16};
-constexpr auto max_required_options            = size_t{8};
-constexpr auto max_repeating_positional_length = size_t{256};
+constexpr auto max_key_length       = size_t{64};
+constexpr auto max_pattern_elements = size_t{16};
+constexpr auto max_required_options = size_t{8};
 } // namespace limits
 
 // Helper to represent compile-time string literal NTTPs
@@ -227,11 +226,11 @@ template<
   auto PositionalKeys,
   auto CommandKeys>
 struct parse_result {
-	std::array<bool, OptionShortNames.size()>                                 option_present{};
-	std::array<fixed_string<limits::max_key_length>, OptionShortNames.size()> option_value{};
+	std::array<bool, OptionShortNames.size()>             option_present{};
+	std::array<std::string_view, OptionShortNames.size()> option_value{};
 
-	std::array<bool, PositionalKeys.size()>                                 positional_present{};
-	std::array<fixed_string<limits::max_key_length>, PositionalKeys.size()> positional_value{};
+	std::array<bool, PositionalKeys.size()>             positional_present{};
+	std::array<std::string_view, PositionalKeys.size()> positional_value{};
 
 	std::array<bool, CommandKeys.size()> command_present{};
 
@@ -253,7 +252,7 @@ struct parse_result {
 		if constexpr(opt_idx != -1) {
 			constexpr auto has_arg = OptionHasArg[opt_idx];
 			if constexpr(has_arg) {
-				return option_present[opt_idx] ? option_value[opt_idx].view() : OptionDefaultValue[opt_idx].view();
+				return option_present[opt_idx] ? option_value[opt_idx] : OptionDefaultValue[opt_idx].view();
 			} else {
 				return option_present[opt_idx];
 			}
@@ -270,7 +269,7 @@ struct parse_result {
 		}();
 
 		if constexpr(pos_idx != -1) {
-			return positional_present[pos_idx] ? positional_value[pos_idx].view() : std::string_view{};
+			return positional_present[pos_idx] ? positional_value[pos_idx] : std::string_view{};
 		}
 
 		// Search in commands
@@ -327,12 +326,12 @@ struct parse_result {
 	constexpr auto get_string(std::string_view key) const -> std::string_view {
 		for(auto i = size_t{0}; i < OptionShortNames.size(); ++i) {
 			if((!OptionShortNames[i].view().empty() && OptionShortNames[i].view() == key) || (!OptionLongNames[i].view().empty() && OptionLongNames[i].view() == key)) {
-				return option_present[i] ? option_value[i].view() : OptionDefaultValue[i].view();
+				return option_present[i] ? option_value[i] : OptionDefaultValue[i].view();
 			}
 		}
 		for(auto i = size_t{0}; i < PositionalKeys.size(); ++i) {
 			if(PositionalKeys[i].view() == key) {
-				return positional_present[i] ? positional_value[i].view() : std::string_view{};
+				return positional_present[i] ? positional_value[i] : std::string_view{};
 			}
 		}
 		return {};
@@ -383,7 +382,7 @@ struct docopt_parser {
 		for(auto i = size_t{0}; i < OptionShortNames.size(); ++i) {
 			if(!OptionDefaultValue[i].view().empty()) {
 				result.option_present[i] = true;
-				result.option_value[i]   = OptionDefaultValue[i];
+				result.option_value[i]   = OptionDefaultValue[i].view();
 			}
 		}
 
@@ -586,25 +585,9 @@ private:
 				// Match repeating positional by greedily taking remaining arguments
 				auto max_matches = args.size() - arg_idx;
 				for(auto num_matches = max_matches; num_matches >= 1; --num_matches) {
-					// Collect values separated by space
-					// We use a local simple buffer to avoid dynamic allocation in matching
-					auto buffer = std::array<char, limits::max_repeating_positional_length>{};
-					auto offset = size_t{0};
-					for(auto m = size_t{0}; m < num_matches; ++m) {
-						auto match_arg = args[arg_idx + m];
-						if(offset + match_arg.size() + (m > 0 ? 1 : 0) >= limits::max_repeating_positional_length) {
-							break; // overflow safety
-						}
-						if(m > 0) {
-							buffer[offset++] = ' ';
-						}
-						std::copy_n(match_arg.data(), match_arg.size(), buffer.data() + offset);
-						offset += match_arg.size();
-					}
-
 					if(pos_idx != -1) {
 						result.positional_present[pos_idx] = true;
-						result.positional_value[pos_idx]   = std::string_view(buffer.data(), offset);
+						result.positional_value[pos_idx]   = args[arg_idx]; // Point to the first matched argument
 					}
 
 					if(match_pattern(elem_idx + 1, arg_idx + num_matches, pat, args, result)) {
