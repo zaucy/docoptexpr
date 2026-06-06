@@ -1,6 +1,6 @@
 module(
     name = "docoptexpr",
-    version = "0.0.1",
+    version = "0.1.0",
 )
 
 bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
