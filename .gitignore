@@ -6,3 +6,6 @@ compile_commands.json
 /external
 *.bazel.lock
 /user.bazelrc
+
+# release archive
+*.tar.gz
